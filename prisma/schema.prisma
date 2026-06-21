@@ -1,0 +1,201 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// 1. PENGGUNA SISTEM (Auth)
+// -----------------------------------------------------------------------------
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String   // Akan menyimpan hash password
+  role      Role     @default(KASIR)
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  KASIR
+  MEKANIK
+}
+
+// -----------------------------------------------------------------------------
+// 2. PELANGGAN & KENDARAAN (Core Domain)
+// -----------------------------------------------------------------------------
+model Customer {
+  id            String     @id @default(uuid())
+  name          String
+  phone         String     @unique
+  address       String?
+  totalSpending Float      @default(0)
+  tier          Tier       @default(REGULER)
+  
+  // Relasi
+  vehicles      Vehicle[]
+  invoices      Invoice[]
+  appointments  Appointment[]
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+enum Tier {
+  REGULER
+  LOYAL
+  VIP
+}
+
+model Vehicle {
+  id              String   @id @default(uuid())
+  licensePlate    String   @unique
+  brand           String
+  model           String
+  year            Int
+  currentOdometer Int      @default(0)
+  transmission    String   // "Manual" | "Matic"
+  vinNumber       String?
+  
+  // Foreign Keys & Relasi
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  components      ComponentPart[]
+  invoices        Invoice[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 3. RIWAYAT SUKU CADANG (Smart Assistant)
+// -----------------------------------------------------------------------------
+model ComponentPart {
+  id                       String   @id @default(uuid())
+  partName                 String
+  brand                    String?
+  price                    Float?
+  lastReplaced             DateTime @default(now())
+  estimatedNextReplacement DateTime
+  warrantyDays             Int      @default(0)
+  
+  // Foreign Keys & Relasi
+  vehicleId                String
+  vehicle                  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  // Menghubungkan riwayat ini dengan item inventaris aslinya (Opsional tapi direkomendasikan)
+  inventoryItemId          String?
+  inventoryItem            InventoryItem? @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// 4. KANBAN & OPERASIONAL (Appointments)
+// -----------------------------------------------------------------------------
+model Appointment {
+  id             String            @id @default(uuid())
+  date           DateTime
+  licensePlate   String            // Disimpan terpisah agar mudah dicari di tabel walau kendaraan belum terdaftar
+  vehicleModel   String
+  primaryService String
+  status         AppointmentStatus @default(BELUM_DIHUBUNGI)
+  
+  // Foreign Keys & Relasi
+  customerId     String
+  customer       Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+enum AppointmentStatus {
+  BELUM_DIHUBUNGI
+  MENUNGGU_BALASAN
+  SUDAH_KONFIRMASI
+  DALAM_PENGERJAAN
+  BATAL
+  SELESAI
+}
+
+// -----------------------------------------------------------------------------
+// 5. INVENTARIS GUDANG (Katalog & Stok)
+// -----------------------------------------------------------------------------
+model InventoryItem {
+  id             String       @id @default(uuid())
+  itemCode       String       @unique
+  name           String
+  brand          String?
+  category       ItemCategory
+  price          Float
+  stock          Int          @default(0)
+  minStock       Int          @default(0)
+  lifespanMonths Int?
+  warrantyDays   Int?         @default(0)
+
+  // Relasi
+  invoiceItems   InvoiceItem[]
+  componentParts ComponentPart[] // Riwayat pemasangan komponen ini di kendaraan
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum ItemCategory {
+  SPAREPART
+  JASA
+  OLI
+  AKSESORIS
+}
+
+// -----------------------------------------------------------------------------
+// 6. TRANSAKSI (POS & Kasir)
+// -----------------------------------------------------------------------------
+model Invoice {
+  id           String        @id @default(uuid())
+  invoiceNum   String        @unique // Contoh: INV-20260315-01
+  date         DateTime      @default(now())
+  mechanicName String
+  totalAmount  Float
+  status       InvoiceStatus @default(BELUM_LUNAS)
+  
+  // Foreign Keys & Relasi
+  customerId   String
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  
+  vehicleId    String?
+  vehicle      Vehicle?      @relation(fields: [vehicleId], references: [id])
+
+  items        InvoiceItem[]
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+enum InvoiceStatus {
+  LUNAS
+  BELUM_LUNAS
+  DIBATALKAN
+}
+
+model InvoiceItem {
+  id              String        @id @default(uuid())
+  itemName        String        // Menyimpan nama item saat transaksi terjadi (historical record)
+  qty             Int
+  subtotal        Float
+  priceAtSale     Float         // Menyimpan harga satuan saat transaksi terjadi
+  
+  // Foreign Keys & Relasi
+  invoiceId       String
+  invoice         Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  
+  inventoryItemId String?       // Menautkan ke master item jika masih ada
+  inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+}
