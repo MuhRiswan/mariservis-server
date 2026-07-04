@@ -1,7 +1,7 @@
-import prisma from "../config/database"
-import { AppError } from "../utils/AppError"
-import bcrypt from "bcryptjs"
-import { Prisma } from "@prisma/client"
+import prisma from '../config/database'
+import { AppError } from '../utils/AppError'
+import bcrypt from 'bcryptjs'
+import { Prisma } from '@prisma/client'
 
 // 1. Menampilkan semua pengguna (tanpa memunculkan password)
 export const getAllUsers = async (page: number = 1, limit: number = 10) => {
@@ -16,8 +16,8 @@ export const getAllUsers = async (page: number = 1, limit: number = 10) => {
         name: true,
         role: true,
         createdAt: true,
-      }, // PASSWORD TIDAK DIPILIH!
-      orderBy: { createdAt: "desc" },
+      },
+      orderBy: { createdAt: 'desc' },
     }),
     prisma.user.count(),
   ])
@@ -30,7 +30,7 @@ export const createUser = async (data: Prisma.UserCreateInput) => {
   const existingUser = await prisma.user.findUnique({
     where: { username: data.username },
   })
-  if (existingUser) throw new AppError("Username tersebut sudah digunakan", 400)
+  if (existingUser) throw new AppError('Username tersebut sudah digunakan', 400)
 
   // HASHING: Mengacak password sebanyak 10 putaran (Standar Industri)
   const salt = await bcrypt.genSalt(10)
@@ -42,7 +42,7 @@ export const createUser = async (data: Prisma.UserCreateInput) => {
   })
 
   // Buang password dari objek sebelum dikembalikan ke Controller
-  const { password, ...userWithoutPassword } = newUser
+  const { password: _password, ...userWithoutPassword } = newUser
   return userWithoutPassword
 }
 
@@ -51,14 +51,14 @@ export const verifyLogin = async (username: string, passwordInput: string) => {
   // Cari pengguna berdasarkan username
   const user = await prisma.user.findUnique({ where: { username } })
 
-  if (!user) throw new AppError("Username atau password salah", 401)
+  if (!user) throw new AppError('Username atau password salah', 401)
 
   // Bandingkan password inputan dengan password acak di database
   const isPasswordValid = await bcrypt.compare(passwordInput, user.password)
 
-  if (!isPasswordValid) throw new AppError("Username atau password salah", 401)
+  if (!isPasswordValid) throw new AppError('Username atau password salah', 401)
 
   // Jika sukses, kembalikan data user tanpa password
-  const { password, ...userWithoutPassword } = user
+  const { password: _password, ...userWithoutPassword } = user
   return userWithoutPassword
 }

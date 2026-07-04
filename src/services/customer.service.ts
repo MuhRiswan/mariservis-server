@@ -1,6 +1,6 @@
-import prisma from "../config/database"
-import { AppError } from "../utils/AppError"
-import { Prisma } from "@prisma/client"
+import prisma from '../config/database'
+import { AppError } from '../utils/AppError'
+import { Prisma } from '@prisma/client'
 
 // Tipe khusus karena kita menerima input gabungan (Customer + Vehicles)
 type CreateCustomerWithVehiclesInput = {
@@ -12,7 +12,7 @@ type CreateCustomerWithVehiclesInput = {
     brand: string
     model: string
     year: number
-    transmission: "Manual" | "Matic"
+    transmission: 'Manual' | 'Matic'
     currentOdometer?: number
     vinNumber?: string
   }[]
@@ -26,7 +26,7 @@ export const getAllCustomers = async (page: number = 1, limit: number = 10) => {
       skip,
       take: limit,
       include: { vehicles: true },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     }),
     prisma.customer.count(),
   ])
@@ -45,7 +45,7 @@ export const getCustomerById = async (id: string) => {
     },
   })
 
-  if (!customer) throw new AppError("Pelanggan tidak ditemukan", 404)
+  if (!customer) throw new AppError('Pelanggan tidak ditemukan', 404)
   return customer
 }
 
@@ -54,8 +54,7 @@ export const createCustomer = async (data: CreateCustomerWithVehiclesInput) => {
   const existingCustomer = await prisma.customer.findUnique({
     where: { phone: data.phone },
   })
-  if (existingCustomer)
-    throw new AppError("Nomor HP tersebut sudah terdaftar di sistem", 400)
+  if (existingCustomer) throw new AppError('Nomor HP tersebut sudah terdaftar di sistem', 400)
 
   // 2. Jika ada data plat nomor, pastikan plat tersebut belum ada di sistem
   if (data.vehicles && data.vehicles.length > 0) {
@@ -64,10 +63,7 @@ export const createCustomer = async (data: CreateCustomerWithVehiclesInput) => {
         where: { licensePlate: vehicle.licensePlate },
       })
       if (existingVehicle)
-        throw new AppError(
-          `Plat nomor ${vehicle.licensePlate} sudah terdaftar`,
-          400,
-        )
+        throw new AppError(`Plat nomor ${vehicle.licensePlate} sudah terdaftar`, 400)
     }
   }
 
@@ -83,14 +79,11 @@ export const createCustomer = async (data: CreateCustomerWithVehiclesInput) => {
   })
 }
 
-export const updateCustomer = async (
-  id: string,
-  data: Prisma.CustomerUpdateInput,
-) => {
+export const updateCustomer = async (id: string, data: Prisma.CustomerUpdateInput) => {
   try {
     return await prisma.customer.update({ where: { id }, data })
-  } catch (error) {
-    throw new AppError("Gagal memperbarui: Pelanggan tidak ditemukan", 404)
+  } catch {
+    throw new AppError('Gagal memperbarui: Pelanggan tidak ditemukan', 404)
   }
 }
 
@@ -98,7 +91,7 @@ export const deleteCustomer = async (id: string) => {
   try {
     await prisma.customer.delete({ where: { id } })
     return true
-  } catch (error) {
-    throw new AppError("Gagal menghapus: Pelanggan tidak ditemukan", 404)
+  } catch {
+    throw new AppError('Gagal menghapus: Pelanggan tidak ditemukan', 404)
   }
 }

@@ -1,6 +1,6 @@
-import prisma from "../config/database"
-import { AppError } from "../utils/AppError"
-import { Prisma } from "@prisma/client"
+import prisma from '../config/database'
+import { AppError } from '../utils/AppError'
+import { Prisma } from '@prisma/client'
 
 // Tambahkan parameter page dan limit dengan nilai default
 export const getAllItems = async (page: number = 1, limit: number = 10) => {
@@ -11,7 +11,7 @@ export const getAllItems = async (page: number = 1, limit: number = 10) => {
     prisma.inventoryItem.findMany({
       skip,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     }),
     prisma.inventoryItem.count(),
   ])
@@ -26,15 +26,13 @@ export const createItem = async (data: Prisma.InventoryItemCreateInput) => {
   })
 
   if (existingItem) {
-    throw new AppError("Kode Item tersebut sudah digunakan di gudang!", 400)
+    throw new AppError('Kode Item tersebut sudah digunakan di gudang!', 400)
   }
 
   return await prisma.inventoryItem.create({ data })
 }
 
-export const createManyItems = async (
-  items: Prisma.InventoryItemCreateInput[],
-) => {
+export const createManyItems = async (items: Prisma.InventoryItemCreateInput[]) => {
   return await prisma.inventoryItem.createMany({
     data: items,
     // skipDuplicates: true memastikan jika ada kode item yang tidak sengaja kembar,
@@ -43,17 +41,14 @@ export const createManyItems = async (
   })
 }
 
-export const updateItem = async (
-  id: string,
-  data: Prisma.InventoryItemUpdateInput,
-) => {
+export const updateItem = async (id: string, data: Prisma.InventoryItemUpdateInput) => {
   try {
     return await prisma.inventoryItem.update({
       where: { id },
       data,
     })
-  } catch (error) {
-    throw new AppError("Gagal update: Item tidak ditemukan", 404)
+  } catch {
+    throw new AppError('Gagal update: Item tidak ditemukan', 404)
   }
 }
 
@@ -61,7 +56,7 @@ export const deleteItem = async (id: string) => {
   try {
     await prisma.inventoryItem.delete({ where: { id } })
     return true
-  } catch (error) {
-    throw new AppError("Gagal hapus: Item tidak ditemukan", 404)
+  } catch {
+    throw new AppError('Gagal hapus: Item tidak ditemukan', 404)
   }
 }
