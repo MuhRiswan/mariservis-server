@@ -54,7 +54,7 @@ export const createBulk = async (
     res.status(201).json({
       success: true,
       data: {
-        insertedCount: result.count, // Mengembalikan jumlah data yang berhasil masuk fisik ke DB
+        insertedCount: result.count,
       },
       message: `${result.count} item berhasil ditambahkan secara massal ke gudang!`,
     })

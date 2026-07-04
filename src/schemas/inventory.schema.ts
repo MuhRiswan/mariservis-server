@@ -1,6 +1,5 @@
 import { z } from "zod"
 
-// Enum Zod ini harus sama persis dengan Enum di Prisma schema
 const ItemCategoryEnum = z.enum(["SPAREPART", "JASA", "OLI", "AKSESORIS"])
 
 export const createInventorySchema = z.object({
@@ -25,5 +24,4 @@ export const bulkCreateInventorySchema = z.object({
     .min(1, "Daftar item massal tidak boleh kosong"),
 })
 
-// Untuk update, semua field opsional (karena mungkin admin hanya mau edit harganya saja)
 export const updateInventorySchema = createInventorySchema.partial()

@@ -1,4 +1,3 @@
-// src/controllers/invoice.controller.ts
 import { Request, Response, NextFunction } from "express"
 import * as invoiceService from "../services/invoice.service"
 import { getPagingData } from "../utils/pagination"
