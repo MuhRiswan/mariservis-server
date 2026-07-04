@@ -9,19 +9,19 @@ import {
 const router = Router()
 
 router.get("/", appointmentController.getAll)
+router.get("/kanban", appointmentController.getKanban)
+router.get("/calendar", appointmentController.getCalendar)
+
 router.post(
   "/",
   validate(createAppointmentSchema),
   appointmentController.create,
 )
-
-// Perhatikan kita menggunakan PATCH di sini, bukan PUT
 router.patch(
   "/:id/status",
   validate(updateAppointmentStatusSchema),
   appointmentController.patchStatus,
 )
-
 router.delete("/:id", appointmentController.remove)
 
 export default router

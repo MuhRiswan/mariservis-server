@@ -1,6 +1,7 @@
 import prisma from "../config/database"
+import { AppointmentWithCustomer } from "../types/appointment"
 import { AppError } from "../utils/AppError"
-import { Prisma } from "@prisma/client"
+import { AppointmentStatus, Prisma } from "@prisma/client"
 
 export const getAllAppointments = async (
   page: number = 1,
@@ -60,4 +61,56 @@ export const deleteAppointment = async (id: string) => {
   } catch (error) {
     throw new AppError("Gagal menghapus: Antrean tidak ditemukan", 404)
   }
+}
+
+// Tambahkan fungsi untuk Kalender
+export const getCalendarAppointments = async (
+  startDate: string,
+  endDate: string,
+) => {
+  return await prisma.appointment.findMany({
+    where: {
+      date: {
+        gte: new Date(startDate), // Lebih besar / sama dengan startDate
+        lte: new Date(endDate), // Lebih kecil / sama dengan endDate
+      },
+    },
+    include: { customer: { select: { name: true } } },
+    orderBy: { date: "asc" },
+  })
+}
+
+// Tambahkan fungsi untuk Kanban (Pengelompokan Otomatis)
+export const getKanbanAppointments = async () => {
+  const appointments = await prisma.appointment.findMany({
+    // Kita ambil antrean yang belum selesai atau baru saja selesai hari ini agar papan tidak terlalu penuh
+    where: {
+      OR: [
+        { status: { not: "SELESAI" } },
+        {
+          status: "SELESAI",
+          date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) }, // Selesai hari ini saja
+        },
+      ],
+    },
+    include: { customer: { select: { name: true, phone: true } } },
+    orderBy: { date: "asc" },
+  })
+
+  // Logika Pengelompokan (Grouping) oleh Backend
+  const groupedData: Record<AppointmentStatus, AppointmentWithCustomer[]> = {
+    BELUM_DIHUBUNGI: [],
+    MENUNGGU_BALASAN: [],
+    SUDAH_KONFIRMASI: [],
+    DALAM_PENGERJAAN: [],
+    SELESAI: [],
+    BATAL: [],
+  }
+
+  // Menyebarkan data ke keranjangnya masing-masing
+  appointments.forEach((apt: AppointmentWithCustomer) => {
+    groupedData[apt.status].push(apt)
+  })
+
+  return groupedData
 }

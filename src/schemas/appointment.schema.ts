@@ -10,7 +10,6 @@ const AppointmentStatusEnum = z.enum([
 ])
 
 export const createAppointmentSchema = z.object({
-  // Kita ubah string ISO menjadi objek Date secara otomatis menggunakan coerce
   date: z.coerce.date({ invalid_type_error: "Format tanggal tidak valid" }),
   customerId: z.string().uuid("ID Pelanggan tidak valid"),
   licensePlate: z.string().min(1, "Plat nomor wajib diisi"),

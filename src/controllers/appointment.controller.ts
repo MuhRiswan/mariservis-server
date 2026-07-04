@@ -36,7 +36,6 @@ export const create = async (
   }
 }
 
-// Mengkhususkan controller untuk PATCH status
 export const patchStatus = async (
   req: Request,
   res: Response,
@@ -70,6 +69,42 @@ export const remove = async (
     res
       .status(200)
       .json({ success: true, message: "Antrean berhasil dibatalkan/dihapus" })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getCalendar = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { start, end } = req.query
+    if (!start || !end) {
+      return res.status(400).json({
+        success: false,
+        message: "Parameter start dan end wajib diisi",
+      })
+    }
+    const calendarData = await appointmentService.getCalendarAppointments(
+      start as string,
+      end as string,
+    )
+    res.status(200).json({ success: true, data: calendarData })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getKanban = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const kanbanData = await appointmentService.getKanbanAppointments()
+    res.status(200).json({ success: true, data: kanbanData })
   } catch (error) {
     next(error)
   }
